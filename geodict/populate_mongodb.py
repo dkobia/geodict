@@ -18,6 +18,7 @@ def load_countries(cursor):
     country_positions = {}
 
     for row in reader:
+        row = [field.decode('ISO-8859-1') for field in row]
         try:
             country_code = row[0]
             lat = row[1]
@@ -30,6 +31,7 @@ def load_countries(cursor):
     reader = csv.reader(open(geodict_config.source_folder+'countrynames.csv', 'rb'))
 
     for row in reader:
+        row = [field.decode('ISO-8859-1') for field in row]
         try:
             country_code = row[0]
             country_names = row[1]
@@ -61,6 +63,7 @@ def load_regions(cursor):
     us_state_positions = {}
 
     for row in reader:
+        row = [field.decode('ISO-8859-1') for field in row]
         try:
             region_code = row[0]
             lat = row[1]
@@ -75,6 +78,7 @@ def load_regions(cursor):
     country_code = 'US'
 
     for row in reader:
+        row = [field.decode('ISO-8859-1') for field in row]
         try:
             region_code = row[0]
             state_names = row[2]
@@ -108,8 +112,10 @@ def load_regions(cursor):
 
 def load_cities(cursor):
     reader = csv.reader(open(geodict_config.source_folder+'worldcitiespop.csv', 'rb'))
-    enc = "utf-8"
     for row in reader:
+        row = [field.decode('ISO-8859-1') for field in row]
+        #row = [field.decode('utf8') for field in row]
+        #row = [unicode(field, 'utf8') for field in row]
         try:
             country = row[0]
             city = row[1]
@@ -128,14 +134,14 @@ def load_cities(cursor):
         last_word, index, skipped = pull_word_from_end(city, len(city)-1, False)
         
         # First, lets look for associated country in the system
-        country = Country.objects(country_code=country.encode(enc)).first()
+        country = Country.objects(country_code=country).first()
         
         # Next, lets look for associated region in the system
-        region = Region.objects(region_code=region_code.encode(enc)).first()
+        region = Region.objects(region_code=region_code).first()
         
         # Finally save the city
-        print "City Name:%r, Lat:%r, Lon:%r, Last Word:%r" % (city.decode(enc, "ignore"), lat, lon, last_word)
-        city = City(city=city.decode(enc, "ignore"))
+        print "City Name:%r, Lat:%r, Lon:%r, Last Word:%r" % (city, lat, lon, last_word)
+        city = City(city=city)
         city.country = country
         city.region = region
         city.lat = float(lat)
