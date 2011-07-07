@@ -48,7 +48,6 @@ def find_locations_in_text(text):
     
         # These 'token sequences' describe patterns of discrete location elements that we'll look for.
         for token_sequence in token_sequences:
-            
             # The sequences are specified in the order they'll occur in the text, but since we're walking
             # backwards we need to reverse them and go through the sequence in that order too
             token_sequence = token_sequence[::-1]
@@ -153,7 +152,7 @@ def is_country( text, text_starting_index, previous_result):
         # Somewhat arbitrary, but for my purposes it's better to miss some ambiguous ones like this
         # than to pull in erroneous words as countries (eg thinking the 'uk' in .co.uk is a country)
         if current_word[0:1].islower():
-            print "We'll take lower case names for now"
+            print "We'll take lower case COUNTRY names for now"
             #continue
 
         name_key = current_word.lower()
@@ -195,7 +194,6 @@ def is_country( text, text_starting_index, previous_result):
         'start_index': (current_index+1),
         'end_index': word_end_index 
     })
-    
     return current_result
 
 # Looks through our database of 2 million towns and cities around the world to locate any that match the
@@ -227,18 +225,21 @@ def is_city( text, text_starting_index, previous_result):
             word_end_index = (text_starting_index-end_skipped)
 
             name_map  = data.get_cities(pulled_word,current_word,country_code,region_code)
+            print "Pulled Word: %r\nCurrent Word: %r\nCountry Code: %r\nRegion Code: %r\n\nCities: \n%r" % (pulled_word,current_word,country_code,region_code, name_map)
             #print candidate_rows
             if len(name_map) < 1:
                 break
             
         else:
             current_word = pulled_word+' '+current_word
+            current_word = current_word.strip()
 
         if current_word == '':
             return None
         
         if current_word[0:1].islower():
-            continue
+            print "We'll take lower case CITY names for now"
+            #continue
 
         name_key = current_word.lower()
         if name_key in name_map:
@@ -275,7 +276,6 @@ def is_city( text, text_starting_index, previous_result):
 
 # This looks for sub-regions within countries. At the moment the only values in the database are for US states
 def is_region( text, text_starting_index, previous_result):
-
     # Narrow down the search by country, if we already have it
     country_code = None
     if previous_result is not None:
@@ -287,10 +287,12 @@ def is_region( text, text_starting_index, previous_result):
     
     current_word = ''
     current_index = text_starting_index
+    
     pulled_word_count = 0
     found_row = None
     while pulled_word_count < geodict_config.word_max:
         pulled_word, current_index, end_skipped = pull_word_from_end(text, current_index)
+        
         pulled_word_count += 1
         if current_word == '':
             current_word = pulled_word
@@ -303,7 +305,9 @@ def is_region( text, text_starting_index, previous_result):
             if country_code is not None:
                 candidate_dicts = []
                 for possible_dict in all_candidate_dicts:
-                    candidate_country = possible_dict.country_code
+                    # Lets look for associated country in the system
+                    # country = Country.objects(country_code=country_code).first()
+                    candidate_country = possible_dict.country.country_code
                     if candidate_country.lower() == country_code.lower():
                         candidate_dicts.append(possible_dict)
             else:
@@ -313,14 +317,17 @@ def is_region( text, text_starting_index, previous_result):
             for candidate_dict in candidate_dicts:
                 name = candidate_dict.region.lower()
                 name_map[name] = candidate_dict
+                
         else:
             current_word = pulled_word+' '+current_word
+            current_word = current_word.strip()
 
         if current_word == '':
             return None
 
         if current_word[0:1].islower():
-            continue
+            print "We'll take lower case REGION names for now"
+            #continue
 
         name_key = current_word.lower()
         if name_key in name_map:
@@ -344,7 +351,7 @@ def is_region( text, text_starting_index, previous_result):
     region_code = found_row['region_code']
     lat = found_row['lat']
     lon = found_row['lon']
-                
+    
     current_result['found_tokens'].insert(0, {
         'type': 'REGION',
         'code': region_code,
@@ -354,7 +361,6 @@ def is_region( text, text_starting_index, previous_result):
         'start_index': (current_index+1),
         'end_index': word_end_index 
     })
-    
     return current_result
 
 # A special case - used to look for 'at' or 'in' before a possible location word. This helps me be more certain

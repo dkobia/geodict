@@ -14,12 +14,14 @@ def get_cities(pulled_word,current_word,country_code,region_code):
     search = {}
     search["last_word"] = current_word
     if country_code:
-        search["country"] = country_code
+        country = Country.objects(country_code=country_code).first()
+        search["country"] = country
     if region_code:
-        search["region"] = region_code
+        region = Region.objects(region_code=region_code).first()
+        search["region"] = region
     
     name_map = {}
-    for candidate in City.objects(__raw__=search):
+    for candidate in City.objects(**search):
         name = candidate.city.lower()
         name_map[name] = candidate
     return name_map
