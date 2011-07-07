@@ -10,7 +10,8 @@ config = {
     'download_url': 'http://github.com/dkobia/geodict',
     'author_email': 'david@ushahidi.com',
     'version': '0.1',
-    'install_requires': ['mongodb','mongoengine','nose'],
+    'install_requires': ['mongodb','mongoengine','nose',
+        'tornado','cliargs'],
     'packages': ['geodict'],
     'scripts': [],
     'name': 'geodict'

@@ -1,21 +1,14 @@
-# Geodict
-# Copyright (C) 2010 Pete Warden <pete@petewarden.com>
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+__author__ = "SwiftRiver Team"
+__copyright__ = "Copyright 2011, Ushahidi Inc."
+__credits__ = ["Pete Warden", "David Kobia", "Edmar Ferreira"]
+__license__ = "GPLv3"
+__version__ = "0.0.1"
+__maintainer__ = "SwiftRiver Team"
+__email__ = "swiftdev@ushahidi.com"
+__status__ = "Development"
 
 import string, StringIO
-import geodict_config
+import geodict_config, util
 from tempfile import TemporaryFile
 from struct import unpack, pack, calcsize
 import data
@@ -27,7 +20,7 @@ countries_cache = data.setup_countries_cache()
 regions_cache   = data.setup_regions_cache()
 
 def find_locations_in_text(text):
-
+    
     current_index = len(text)-1
     result = []
     
@@ -40,6 +33,10 @@ def find_locations_in_text(text):
         lower_word = current_word.lower()
         could_be_country = lower_word in countries_cache
         could_be_region = lower_word in regions_cache
+        
+        if lower_word in util.stop_words:
+            current_index = pulled_index
+            continue
         
         if not could_be_country and not could_be_region:
             current_index = pulled_index
@@ -100,14 +97,13 @@ def find_locations_in_text(text):
     
     # Reverse the result so it's in the order that the locations occured in the text
     result = result[::-1]
-    
     return result
 
 # Functions that look at a small portion of the text, and try to identify any location identifiers
 
 # Matches the current fragment against our database of countries
 def is_country( text, text_starting_index, previous_result):
-        
+    
     current_word = ''
     current_index = text_starting_index
     pulled_word_count = 0
@@ -142,11 +138,12 @@ def is_country( text, text_starting_index, previous_result):
             name_map = {}
             for candidate_dict in candidate_dicts:
 #                candidate_dict = get_dict_from_row(cursor, candidate_row)
-                name = candidate_dict['country'].lower()
+                name = candidate_dict.country.lower()
                 name_map[name] = candidate_dict
         else:
             #
             current_word = pulled_word+' '+current_word
+            current_word = current_word.strip()
 
         # This happens if we've walked backwards all the way to the start of the string
         if current_word == '':
@@ -156,7 +153,8 @@ def is_country( text, text_starting_index, previous_result):
         # Somewhat arbitrary, but for my purposes it's better to miss some ambiguous ones like this
         # than to pull in erroneous words as countries (eg thinking the 'uk' in .co.uk is a country)
         if current_word[0:1].islower():
-            continue
+            print "We'll take lower case names for now"
+            #continue
 
         name_key = current_word.lower()
         if name_key in name_map:
@@ -305,7 +303,7 @@ def is_region( text, text_starting_index, previous_result):
             if country_code is not None:
                 candidate_dicts = []
                 for possible_dict in all_candidate_dicts:
-                    candidate_country = possible_dict['country_code']
+                    candidate_country = possible_dict.country_code
                     if candidate_country.lower() == country_code.lower():
                         candidate_dicts.append(possible_dict)
             else:
@@ -313,7 +311,7 @@ def is_region( text, text_starting_index, previous_result):
             
             name_map = {}
             for candidate_dict in candidate_dicts:
-                name = candidate_dict['region'].lower()
+                name = candidate_dict.region.lower()
                 name_map[name] = candidate_dict
         else:
             current_word = pulled_word+' '+current_word
@@ -385,7 +383,7 @@ tokenized_words = {}
 
 # Walks backwards through the text from the end, pulling out a single unbroken sequence of non-whitespace
 # characters, trimming any whitespace off the end
-def pull_word_from_end(text, index, use_cache=True):
+def pull_word_from_end(text, index, use_cache=False):
 
     if use_cache and index in tokenized_words:
         return tokenized_words[index]
@@ -412,7 +410,7 @@ def pull_word_from_end(text, index, use_cache=True):
     # reverse the result (since we're appending for efficiency's sake)
     found_word = found_word[::-1]
     
-    result = (found_word, current_index, end_skipped)
+    result = (found_word.strip(), current_index, end_skipped)
     tokenized_words[index] = result
 
     return result

@@ -49,7 +49,7 @@ def load_countries(cursor):
             last_word, index, skipped = pull_word_from_end(country_name, len(country_name)-1, False)
             
             # Finally save the country
-            # print "Country Name:%r, Country Code:%r, Lat:%r, Lon:%r, Last Word:%r" % (country_name, country_code, lat, lon, last_word)
+            print "Country Name:%s, Country Code:%s, Lat:%s, Lon:%s, Last Word:%s" % (country_name, country_code, lat, lon, last_word)
             country = Country(country=country_name)
             country.country_code = country_code
             country.lat = float(lat)
@@ -100,7 +100,7 @@ def load_regions(cursor):
             country = Country.objects(country_code=country_code).first()
 
             # Finally save the region
-            # print "Region Name:%r, Region Code:%r, Lat:%r, Lon:%r, Last Word:%r" % (state_name, region_code, lat, lon, last_word)
+            print "Region Name:%r, Region Code:%r, Lat:%r, Lon:%r, Last Word:%r" % (state_name, region_code, lat, lon, last_word)
             region = Region(region=state_name)
             region.country = country
             region.region_code = region_code
